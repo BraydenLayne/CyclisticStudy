@@ -1,0 +1,175 @@
+---
+title: "Cyclistic Case Study"
+author: "Brayden Balla"
+date: "2023-08-06"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+
+##### Loading packages I frequently use
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+library(lubridate)
+
+```
+
+##### Importing my data 
+
+```{r Loading Data}
+
+June_2022 <- read_csv("202206-divvy-tripdata.csv")
+July_2022 <- read_csv("202207-divvy-tripdata.csv")
+August_2022 <- read_csv("202208-divvy-tripdata.csv")
+September_2022 <- read_csv("202208-divvy-tripdata.csv") 
+October_2022 <- read_csv("202210-divvy-tripdata.csv") 
+November_2022 <- read_csv("202211-divvy-tripdata.csv")
+December_2022 <- read_csv("202212-divvy-tripdata.csv")
+
+January_2023 <- read_csv("202301-divvy-tripdata.csv")
+Febuary_2023 <- read_csv("202302-divvy-tripdata.csv")
+March_2023 <- read_csv("202303-divvy-tripdata.csv")
+April_2023 <- read_csv("202304-divvy-tripdata.csv")
+May_2023 <- read_csv("202305-divvy-tripdata.csv")
+June_2023 <- read_csv("202306-divvy-tripdata.csv")
+
+```
+
+
+##### April_2023, June_2023, June_2022, August_2022, September_2022 have missing values for columns:
+##### "start_station_name, start_station_id, end_station_name, end_station_id."
+
+```{r Structure Preview}
+
+str(April_2023)
+str(March_2023)
+
+```
+
+##### It appears as though the data is formatted correctly. 
+
+```{r Final structure preview}
+
+colnames(April_2023)
+colnames(March_2023)
+str(Febuary_2023$rideable_type)
+
+```
+
+##### I want to know how many distinct values I have for rideable types and members/casual.
+##### Rideable Types are electric bike, classic bike, docked bike. There are options for members and casual riders.  
+
+```{r distinct values}
+
+unique(April_2023$rideable_type)
+unique(April_2023$member_casual)
+unique(May_2023$rideable_type)
+unique(May_2023$member_casual)  
+
+```
+
+##### Changing the original tables into tables for the final 2 quarters of 2022 and the first 2 of 2023.
+##### There are separate tables for members and casual riders of each table.
+
+```{r}
+April2023_Casual <- April_2023 %>%
+  filter(member_casual == 'casual')
+April2023_Member <- April_2023 %>%
+  filter(member_casual == 'member')
+May2023_Casual <- May_2023 %>%
+  filter(member_casual == 'casual')     ##Q2 2023
+May2023_Member <- May_2023 %>%
+  filter(member_casual == 'member')
+June2023_Casual <- June_2023 %>%
+  filter(member_casual == 'casual')
+June2023_Member <- June_2023 %>%
+  filter(member_casual == 'member')
+
+January2023_Casual <- January_2023 %>%
+  filter(member_casual == 'casual')
+January2023_Member <- January_2023 %>%
+  filter(member_casual == 'member')
+Febuary2023_Casual <- Febuary_2023 %>%    ##Q1 2023
+  filter(member_casual == 'casual')
+Febuary2023_Member <- Febuary_2023 %>%
+  filter(member_casual == 'member')
+March2023_Casual <- March_2023 %>%
+  filter(member_casual == 'casual')
+March2023_Member <- March_2023 %>%
+  filter(member_casual == 'member')
+
+December2022_Casual <- December_2022 %>%
+  filter(member_casual == 'casual')
+December2022_Member <- December_2022 %>%
+  filter(member_casual == 'member')
+November2022_Casual <- November_2022 %>%       ##Q4 2022
+  filter(member_casual == 'casual')
+November2022_Member <- November_2022 %>%
+  filter(member_casual == 'member')
+October2022_Casual <- October_2022 %>%
+  filter(member_casual == 'casual')
+October2022_Member <- October_2022 %>%
+  filter(member_casual == 'member')
+
+July2022_Casual <- July_2022 %>%
+  filter(member_casual == 'casual')
+July2022_Member <- July_2022 %>%
+  filter(member_casual == 'member')
+August2022_Casual <- August_2022 %>%
+  filter(member_casual == 'casual')
+August2022_Member <- August_2022 %>%      ##Q3 2022
+  filter(member_casual == 'member')
+September2022_Casual <- September_2022 %>%
+  filter(member_casual == 'casual')
+September2022_Member <- September_2022 %>%
+  filter(member_casual == 'member')
+
+```
+
+##### Used RBIND to make tables for Q3 & Q4 of 2022 casual riders and members, and Q1 & Q2 of 2023. I realize 
+##### there are faster ways to get here.
+
+```{r}
+Q3_2022_Casual <- rbind(July2022_Casual, August2022_Casual, September2022_Casual)
+Q3_2022_Member <- rbind(July2022_Member, August2022_Member, September2022_Member)
+Q4_2022_Casual <- rbind(October2022_Casual, November2022_Casual, December2022_Casual)
+Q4_2022_Member <- rbind(October2022_Member, November2022_Member, December2022_Member)
+Q1_2023_Casual <- rbind(January2023_Casual, Febuary2023_Casual, March2023_Casual)
+Q1_2023_Member <- rbind(January2023_Member, Febuary2023_Member, March2023_Member)
+Q2_2023_Casual <- rbind(April2023_Casual, May2023_Casual, June2023_Casual)
+Q2_2023_Member <- rbind(April2023_Member, May2023_Member, June2023_Member)
+
+```
+
+##### Adding a ride length column in each to observe the amount of time both rider types take.Total time /60 so we can see length in minutes.
+
+```{r}
+
+Q2_2023_Casual <- Q2_2023_Casual %>%
+  mutate(ride_length = (ended_at - started_at)/60)
+
+```
+
+##### Calculating the mean ride length of different rider types in each quarter.
+
+
+summarise(Q3_2022_Casual, mean(ride_length))     ## 29.30 minutes avg 
+summarise(Q3_2022_Member, mean(ride_length))     ## 13.49 minutes avg
+summarise(Q4_2022_Casual, mean(ride_length))     ## 24.42 minutes avg
+summarise(Q4_2022_Member, mean(ride_length))     ## 11.43 minutes avg
+summarise(Q1_2023_Casual, mean(ride_length))     ## 22.35 minutes avg
+summarise(Q1_2023_Member, mean(ride_length))     ## 10.5 minutes avg
+summarise(Q2_2023_Casual, mean(ride_length))     ## 28.7 minutes avg
+summarise(Q2_2023_Member, mean(ride_length))       
+
+
+
+##### Unexpectedly noticing casual riders ride longer than members. 
+##### Members kick off the busy season in Q2 with >1,000,000 rides, Q3 recorded >1,000,000 rides for both members and casual riders. 
+
+
